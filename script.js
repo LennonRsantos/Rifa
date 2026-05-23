@@ -1138,7 +1138,7 @@ Segue o comprovante de pagamento! ✅`;
    TEMA (dark / light)
 ────────────────────────────────────────────────────────── */
 function initTheme() {
-  const saved = localStorage.getItem('rifa_theme') || 'light';
+  const saved = localStorage.getItem('rifa_theme') || 'dark';
   applyTheme(saved);
 }
 
