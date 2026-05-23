@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rifa</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<header id="site-header">
+  <div class="container header-content">
+    <div class="header-brand" id="header-brand-click" title="Clique 5x para acesso admin">
+      <span class="header-emoji">🎟️</span>
+      <h1 id="raffle-title">Rifa</h1>
+    </div>
+    <div class="header-right">
+      <!-- Botão de tema -->
+      <button class="btn-theme-toggle" id="btn-theme-toggle" onclick="toggleTheme()" title="Alternar tema">🌙</button>
+      <!-- Só aparece quando admin estiver logado -->
+      <div class="header-admin-bar" id="header-admin-bar" style="display:none">
+        <span class="admin-badge">Admin</span>
+        <button class="btn btn-outline-header" onclick="openAdmin()">🛡️ Painel</button>
+        <button class="btn btn-ghost-header" onclick="logoutAdmin()" title="Sair do admin">✕</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════ -->
+<main class="container">
+
+  <!-- TELA: Rifa não configurada (público) -->
+  <div id="screen-coming-soon" class="card coming-soon-card" style="display:none">
+    <div class="cs-icon">🎟️</div>
+    <h2>Rifa em breve!</h2>
+    <p>Nosso sorteio está sendo preparado. Volte em breve para participar.</p>
+  </div>
+
+  <!-- INFO CARD -->
+  <div id="raffle-info" class="card info-card" style="display:none">
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="info-label">Valor/número</span>
+        <span class="info-value" id="info-price">—</span>
+      </div>
+      <div class="info-item">
+        <span class="info-label">Disponíveis</span>
+        <span class="info-value color-green" id="info-available">—</span>
+      </div>
+      <div class="info-item admin-only-info">
+        <span class="info-label">Total</span>
+        <span class="info-value" id="info-total">—</span>
+      </div>
+      <div class="info-item admin-only-info">
+        <span class="info-label">Aguardando</span>
+        <span class="info-value color-orange" id="info-pending">—</span>
+      </div>
+      <div class="info-item admin-only-info">
+        <span class="info-label">Vendidos</span>
+        <span class="info-value color-red" id="info-paid">—</span>
+      </div>
+      <div class="info-item admin-only-info">
+        <span class="info-label">Arrecadado</span>
+        <span class="info-value color-purple" id="info-earned">—</span>
+      </div>
+    </div>
+    <p id="raffle-description" class="raffle-description" style="display:none"></p>
+  </div>
+
+  <!-- CONTROLES (legenda + filtro) -->
+  <div id="controls" class="controls" style="display:none">
+    <div class="legend">
+      <span class="legend-item"><span class="dot dot-available"></span>Disponível</span>
+      <span class="legend-item"><span class="dot dot-selected"></span>Selecionado</span>
+      <span class="legend-item"><span class="dot dot-pending"></span>Aguardando</span>
+      <span class="legend-item"><span class="dot dot-paid"></span>Vendido</span>
+    </div>
+    <div class="search-filter">
+      <input type="text" id="search-number" placeholder="🔍 Buscar número…" oninput="filterNumbers()"/>
+      <select id="filter-status" onchange="filterNumbers()">
+        <option value="all">Todos</option>
+        <option value="available">Disponíveis</option>
+        <option value="selected">Selecionados</option>
+        <option value="pending">Aguardando</option>
+        <option value="paid">Vendidos</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- CARD: Organizadores -->
+  <div id="organizers-card" class="card organizers-card" style="display:none">
+    <img src="./img/nos.jpeg" alt="Isadora e Lennon" class="organizers-photo" onerror="this.style.display='none'"/>
+    <div class="organizers-info">
+      <span class="organizers-label">✨ Realizado por</span>
+      <p class="organizers-name" id="organizers-name">Lennon e Isadora</p>
+    </div>
+  </div>
+
+  <!-- CARD: Gerar números aleatórios -->
+  <div id="random-picker-card" class="card random-picker-card" style="display:none">
+    <div class="random-picker-header">
+      <div class="random-picker-icon">🎲</div>
+      <div class="random-picker-title">
+        <h3>Quero deixar a sorte de decidir!</h3>
+        <p>Informe a quantidade e o sistema sorteia os números para você</p>
+      </div>
+    </div>
+    <div class="random-picker-body">
+      <div class="random-picker-controls">
+        <div class="random-qty-wrapper">
+          <label for="random-qty">Quantos números?</label>
+          <input type="number" id="random-qty" min="1" placeholder="Ex: 5"
+            onkeypress="if(event.key==='Enter') pickRandomNumbers()"/>
+        </div>
+        <button class="btn btn-random" onclick="pickRandomNumbers()">🎲 Gerar Aleatório</button>
+      </div>
+      <div id="random-result" class="random-result" style="display:none">
+        <div class="random-result-header">
+          <span class="random-result-label">✨ Números sorteados</span>
+          <button class="random-result-clear" onclick="clearRandomResult()">✕ Limpar</button>
+        </div>
+        <div id="random-result-numbers" class="random-result-numbers"></div>
+        <p class="random-result-hint">Confirme sua reserva na barra abaixo</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRADE DE NÚMEROS -->
+  <div id="numbers-grid" class="numbers-grid"></div>
+
+</main>
+
+<!-- BARRA FLUTUANTE DE COMPRA -->
+<div id="purchase-bar" class="purchase-bar" style="display:none">
+  <div class="purchase-info">
+    <span id="selected-count"></span>
+    <strong id="selected-total"></strong>
+  </div>
+  <div class="purchase-actions">
+    <button class="btn btn-outline-white" onclick="clearSelection()">Limpar</button>
+    <button class="btn btn-white" onclick="openBuyerForm()">Reservar →</button>
+  </div>
+</div>
+
+<!-- FOOTER (acesso admin oculto) -->
+<footer class="site-footer">
+  <span>© 2025 · Chá de Casa Nova - Lennon e Isa</span>
+  <button class="footer-admin-btn" onclick="openAdminLogin()" title="Acesso Administrativo">🔐</button>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════
+     MODAIS
+══════════════════════════════════════════════════════════ -->
+
+<!-- MODAL: LOGIN ADMIN -->
+<div id="modal-admin-login" class="modal">
+  <div class="modal-overlay" onclick="closeAdminLogin()"></div>
+  <div class="modal-content modal-small">
+    <div class="modal-header">
+      <h2>🔐 Acesso Administrativo</h2>
+      <button class="btn-close" onclick="closeAdminLogin()">✕</button>
+    </div>
+    <div class="modal-body admin-login-body">
+      <div class="admin-lock-icon">🔑</div>
+      <p>Digite a senha de administrador</p>
+      <div class="form-group" style="max-width:280px;margin:0 auto 16px">
+        <div class="input-eye">
+          <input type="password" id="admin-password-input" placeholder="Senha de acesso"
+            onkeypress="if(event.key==='Enter') loginAdmin()"/>
+          <button type="button" class="eye-btn" onclick="toggleEye('admin-password-input',this)">👁️</button>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="loginAdmin()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PAINEL ADMIN (5 abas) -->
+<div id="modal-admin" class="modal">
+  <div class="modal-overlay" onclick="closeAdmin()"></div>
+  <div class="modal-content modal-xlarge">
+    <div class="modal-header">
+      <h2>🛡️ Painel Administrativo</h2>
+      <button class="btn-close" onclick="closeAdmin()">✕</button>
+    </div>
+
+    <!-- Stats rápidos -->
+    <div class="admin-stats" id="admin-stats-bar">
+      <div class="stat-card">
+        <span class="stat-label">Arrecadado</span>
+        <span class="stat-value color-green" id="stat-earned">R$ 0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Vendidos</span>
+        <span class="stat-value color-green" id="stat-paid">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Aguardando</span>
+        <span class="stat-value color-orange" id="stat-pending">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Disponíveis</span>
+        <span class="stat-value color-blue" id="stat-available">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Participantes</span>
+        <span class="stat-value" id="stat-participants">0</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Potencial</span>
+        <span class="stat-value color-purple" id="stat-potential">R$ 0</span>
+      </div>
+    </div>
+
+    <!-- Abas -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="tab-btn-requests"  onclick="switchTab('requests')">🔔 Solicitações <span id="badge-requests" class="tab-badge" style="display:none">0</span></button>
+      <button class="admin-tab"        id="tab-btn-buyers"    onclick="switchTab('buyers')">👥 Compradores</button>
+      <button class="admin-tab"        id="tab-btn-draw"      onclick="switchTab('draw')">🏆 Sorteio</button>
+      <button class="admin-tab"        id="tab-btn-settings"  onclick="switchTab('settings')">⚙️ Config</button>
+    </div>
+
+    <!-- TAB: SOLICITAÇÕES -->
+    <div id="admin-tab-requests" class="admin-tab-content">
+      <div class="requests-section">
+        <h3 class="section-title">⏳ Aguardando Aprovação</h3>
+        <div id="requests-pending-list"></div>
+      </div>
+      <div class="requests-section" style="margin-top:24px">
+        <div class="section-title-row">
+          <h3 class="section-title">📋 Histórico</h3>
+          <select id="requests-history-filter" onchange="renderRequests()">
+            <option value="all">Todos</option>
+            <option value="approved">Aprovados</option>
+            <option value="rejected">Rejeitados</option>
+          </select>
+        </div>
+        <div id="requests-history-list"></div>
+      </div>
+    </div>
+
+    <!-- TAB: COMPRADORES -->
+    <div id="admin-tab-buyers" class="admin-tab-content" style="display:none">
+      <div class="admin-filters">
+        <input type="text" id="admin-search" placeholder="🔍 Nome, telefone ou número…" oninput="renderBuyers()"/>
+        <select id="admin-filter-status" onchange="renderBuyers()">
+          <option value="all">Todos os status</option>
+          <option value="pending">⏳ Aguardando</option>
+          <option value="approved">✅ Aprovado</option>
+          <option value="rejected">❌ Rejeitado</option>
+        </select>
+      </div>
+      <div id="admin-buyers-list"></div>
+    </div>
+
+    <!-- TAB: SORTEIO -->
+    <div id="admin-tab-draw" class="admin-tab-content" style="display:none">
+      <div class="draw-config-card">
+        <h3 class="draw-config-title">🎯 Realizar Sorteio</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Prêmio *</label>
+            <input type="text" id="draw-prize" placeholder="Ex: TV 55 Polegadas"/>
+          </div>
+          <div class="form-group">
+            <label>Data do Sorteio</label>
+            <input type="date" id="draw-date"/>
+          </div>
+        </div>
+        <div class="draw-info-bar" id="draw-info-bar">— números vendidos disponíveis</div>
+        <button class="btn btn-draw" onclick="drawWinner()">
+          <span>🏆</span> Sortear Agora
+        </button>
+      </div>
+      <div class="draw-history-header">
+        <h3 class="section-title">📋 Histórico de Sorteios</h3>
+        <button class="btn btn-outline-gray btn-sm" id="btn-clear-draw" onclick="clearDrawHistory()" style="display:none">🗑️ Limpar</button>
+      </div>
+      <div id="draw-history-list"></div>
+    </div>
+
+    <!-- TAB: CONFIGURAÇÕES -->
+    <div id="admin-tab-settings" class="admin-tab-content" style="display:none">
+      <div class="settings-section">
+        <h3 class="section-title">🎟️ Dados da Rifa</h3>
+        <div class="form-group">
+          <label>Nome da Rifa *</label>
+          <input type="text" id="cfg-name" placeholder="Ex: Rifa do Churrasco" maxlength="60"/>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Total de Números *</label>
+            <input type="number" id="cfg-total" placeholder="Ex: 100" min="1" max="1000"/>
+          </div>
+          <div class="form-group">
+            <label>Valor por Número (R$) *</label>
+            <input type="number" id="cfg-price" placeholder="Ex: 10.00" min="0.01" step="0.01"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição (opcional)</label>
+          <textarea id="cfg-description" placeholder="Descreva o prêmio, regras ou outras informações…" rows="3"></textarea>
+        </div>
+        <div id="cfg-numbers-warning" class="alert alert-warning" style="display:none">
+          ⚠️ Alterar a quantidade irá regenerar a grade. Reservas existentes serão mantidas.
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">📲 WhatsApp de Notificações</h3>
+        <div class="form-group">
+          <label>WhatsApp do Administrador *</label>
+          <input type="tel" id="cfg-admin-whatsapp" placeholder="(00) 00000-0000" oninput="maskPhone(this)"/>
+        </div>
+        <p class="field-hint">Número que receberá avisos de novas compras e onde os compradores enviarão o comprovante.</p>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">💠 Configuração do PIX</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo de Chave *</label>
+            <select id="cfg-pix-type">
+              <option value="cpf">CPF</option>
+              <option value="cnpj">CNPJ</option>
+              <option value="phone">Telefone</option>
+              <option value="email">E-mail</option>
+              <option value="random">Chave Aleatória</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chave PIX *</label>
+            <input type="text" id="cfg-pix-key" placeholder="Sua chave PIX"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome do Titular *</label>
+            <input type="text" id="cfg-pix-holder" placeholder="Nome como aparece no PIX"/>
+          </div>
+          <div class="form-group">
+            <label>Banco (opcional)</label>
+            <input type="text" id="cfg-pix-bank" placeholder="Ex: Nubank, Caixa…"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Instrução ao comprador (opcional)</label>
+          <textarea id="cfg-pix-instructions" placeholder="Ex: Envie o comprovante via WhatsApp após o pagamento…" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">🔒 Segurança</h3>
+        <div class="form-group">
+          <label>Senha do Administrador *</label>
+          <div class="input-eye">
+            <input type="password" id="cfg-password" placeholder="Defina ou altere a senha"/>
+            <button type="button" class="eye-btn" onclick="toggleEye('cfg-password',this)">👁️</button>
+          </div>
+        </div>
+        <p class="field-hint">Deixe em branco para manter a senha atual.</p>
+      </div>
+
+      <div class="settings-footer">
+        <button class="btn btn-danger btn-sm" onclick="resetRaffle()">🗑️ Resetar Rifa</button>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 Salvar Configurações</button>
+      </div>
+    </div>
+
+    <div class="modal-footer admin-modal-footer">
+      <button class="btn btn-outline-gray" onclick="logoutAdmin()">Sair do Admin</button>
+      <button class="btn btn-outline-gray" onclick="closeAdmin()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: COMPRADOR (dados para reserva) -->
+<div id="modal-buyer" class="modal">
+  <div class="modal-overlay" onclick="closeBuyerForm()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>👤 Seus Dados</h2>
+      <button class="btn-close" onclick="closeBuyerForm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="selected-summary">
+        <div class="summary-row">
+          <span>Números selecionados:</span>
+          <span id="buyer-numbers" class="summary-numbers"></span>
+        </div>
+        <div class="summary-row summary-total">
+          <span>Total a pagar:</span>
+          <strong id="buyer-total"></strong>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nome Completo *</label>
+        <input type="text" id="buyer-name" placeholder="Seu nome completo"/>
+      </div>
+      <div class="form-group">
+        <label>WhatsApp *</label>
+        <input type="tel" id="buyer-phone" placeholder="(00) 00000-0000" oninput="maskPhone(this)"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline-gray" onclick="closeBuyerForm()">Cancelar</button>
+      <button class="btn btn-primary" onclick="goToPix()">Continuar → Pagamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PIX PAGAMENTO -->
+<div id="modal-pix" class="modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content modal-pix-content">
+    <div class="modal-header">
+      <h2>💠 Realizar Pagamento</h2>
+      <button class="btn-close" onclick="cancelPix()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="pix-summary">
+        <div class="pix-summary-row"><span>Comprador:</span><strong id="pix-buyer-name"></strong></div>
+        <div class="pix-summary-row"><span>Números:</span><span id="pix-numbers" class="pix-numbers-list"></span></div>
+        <div class="pix-summary-row pix-total-row"><span>Total:</span><strong id="pix-total" class="pix-total-value"></strong></div>
+      </div>
+
+      <div class="pix-card">
+        <div class="pix-card-header">
+          <span class="pix-logo">💠 Pix</span>
+          <span class="pix-key-type-badge" id="pix-type-badge">E-mail</span>
+        </div>
+        <div class="pix-key-section">
+          <div class="pix-key-label">Chave PIX</div>
+          <div class="pix-key-value" id="pix-key-display">—</div>
+          <button class="btn btn-copy" id="btn-copy-pix" onclick="copyPixKey()">
+            <span id="copy-icon">📋</span> Copiar chave
+          </button>
+        </div>
+        <div class="pix-holder-info">
+          <span id="pix-holder-display"></span>
+          <span id="pix-bank-display" class="pix-bank"></span>
+        </div>
+      </div>
+
+      <div id="pix-instructions-box" class="pix-instructions" style="display:none">
+        <p id="pix-instructions-text"></p>
+      </div>
+
+      <div class="pix-warning">
+        ⏳ Após realizar o pagamento, clique em <strong>"Já paguei!"</strong>. O administrador irá confirmar em breve.
+      </div>
+    </div>
+    <div class="modal-footer pix-footer">
+      <button class="btn btn-outline-gray" onclick="cancelPix()">Cancelar</button>
+      <button class="btn btn-pix" onclick="confirmPixPayment()">✅ Já paguei!</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAÇÃO PÓS-PAGAMENTO -->
+<div id="modal-pix-done" class="modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content modal-small">
+    <div class="modal-body text-center">
+      <div class="success-icon">✅</div>
+      <h2>Solicitação Enviada!</h2>
+      <p class="confirm-message" id="pix-done-message"></p>
+      <div id="pix-done-numbers" class="confirm-numbers"></div>
+      <div class="pix-done-info">
+        <p>⏳ Seu pagamento está sendo analisado pelo administrador.</p>
+        <p>📲 Envie o comprovante pelo botão abaixo para agilizar a confirmação.</p>
+      </div>
+    </div>
+    <div class="modal-footer" style="flex-direction:column;gap:8px;align-items:stretch">
+      <a id="btn-buyer-proof-whatsapp" class="btn btn-whatsapp" href="#" target="_blank" rel="noopener" style="display:none;justify-content:center">
+        📲 Enviar comprovante via WhatsApp
+      </a>
+      <button class="btn btn-outline-gray" onclick="closePixDone()" style="justify-content:center">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VER COMPRADOR -->
+<div id="modal-view-buyer" class="modal">
+  <div class="modal-overlay" onclick="closeViewBuyer()"></div>
+  <div class="modal-content modal-small">
+    <div class="modal-header">
+      <h2>👤 Detalhes</h2>
+      <button class="btn-close" onclick="closeViewBuyer()">✕</button>
+    </div>
+    <div class="modal-body" id="view-buyer-body"></div>
+    <div class="modal-footer" id="view-buyer-footer"></div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR COMPRADOR -->
+<div id="modal-edit-buyer" class="modal">
+  <div class="modal-overlay" onclick="closeEditBuyer()"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>✏️ Editar Comprador</h2>
+      <button class="btn-close" onclick="closeEditBuyer()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-buyer-id"/>
+      <div class="form-group">
+        <label>Nome Completo *</label>
+        <input type="text" id="edit-buyer-name" placeholder="Nome completo"/>
+      </div>
+      <div class="form-group">
+        <label>WhatsApp *</label>
+        <input type="tel" id="edit-buyer-phone" placeholder="(00) 00000-0000" oninput="maskPhone(this)"/>
+      </div>
+      <div class="form-group">
+        <label>Status do Pagamento</label>
+        <select id="edit-buyer-status" onchange="renderEditNumbers()">
+          <option value="pending">⏳ Aguardando</option>
+          <option value="approved">✅ Aprovado</option>
+          <option value="rejected">❌ Rejeitado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Números</label>
+        <div id="edit-buyer-numbers-tags" class="edit-numbers-tags"></div>
+        <div class="edit-add-number">
+          <input type="number" id="edit-add-num-input" min="1" placeholder="Adicionar número…"
+            onkeypress="if(event.key==='Enter') addEditNumber()"/>
+          <button class="btn btn-primary btn-sm" onclick="addEditNumber()">+ Adicionar</button>
+        </div>
+      </div>
+      <div class="edit-summary" id="edit-summary"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline-gray" onclick="closeEditBuyer()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditBuyer()">💾 Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RESULTADO DO SORTEIO -->
+<div id="modal-draw-result" class="modal">
+  <div class="modal-overlay"></div>
+  <div class="modal-content modal-small">
+    <div class="modal-body text-center">
+      <div id="draw-anim-icon" class="draw-animation">🏆</div>
+      <h2 id="draw-result-title">Sorteando…</h2>
+      <p id="draw-result-prize" class="draw-result-prize"></p>
+      <div id="draw-winner-number" class="draw-winner-number"></div>
+      <div id="draw-winner-info" class="draw-winner-info"></div>
+      <p id="draw-result-date" class="draw-result-date"></p>
+    </div>
+    <div class="modal-footer justify-center">
+      <button class="btn btn-primary" onclick="closeDrawResult()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOASTS -->
+<div id="toast-container"></div>
+
+<!-- Firebase CDN (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics-compat.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"c:\\\\Users\\\\Lenno\\\\OneDrive\\\\Documentos\\\\PROJETOS\\\\rifa\")",
+      "Bash(Get-ChildItem \"c:\\\\Users\\\\Lenno\\\\OneDrive\\\\Documentos\\\\PROJETOS\\\\rifa\\\\\" | Select-Object Name, Extension, Length)"
+    ]
+  }
+}
